@@ -77,6 +77,12 @@
     outline:none;
     border-color:var(--accent);
   }
+  input:disabled{
+    background:#EDE9DF;
+    color:var(--text-muted);
+    border-color:var(--border);
+    cursor:not-allowed;
+  }
   .readout{
     height:38px;
     display:flex;
@@ -207,18 +213,26 @@
   <h1>飾品定價試算器</h1>
   <p class="subtitle">輸入進貨成本與各項雜支,自動算出建議售價與淨利</p>
 
+  <div class="row" style="margin-bottom:14px; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);">
+    <label class="switch">
+      <input type="checkbox" id="currencyModeToggle">
+      <span class="track"></span><span class="thumb"></span>
+    </label>
+    <span id="currencyModeLabel" style="font-size:13px; color:var(--text-secondary);">目前輸入幣別:人民幣(自動換算台幣)</span>
+  </div>
+
   <div class="grid grid-4">
     <div>
-      <label for="rmb">人民幣進價</label>
+      <label for="rmb" id="rmbLabel">人民幣進價</label>
       <input type="number" id="rmb" value="8.77" step="0.01">
     </div>
     <div>
-      <label for="rate">匯率</label>
+      <label for="rate" id="rateLabel">匯率</label>
       <input type="number" id="rate" value="5" step="0.1">
     </div>
     <div>
-      <label>台幣(自動換算)</label>
-      <div class="readout plain" id="out-l">-</div>
+      <label id="twdLabel">台幣(自動換算)</label>
+      <input type="number" id="twd" value="43.85" step="0.01" disabled>
     </div>
     <div>
       <label for="q">倍數</label>
@@ -293,6 +307,7 @@ function renderCostList(){
     switchHtml('data-cost-toggle', it.id, it.enabled)+
     '<input type="text" data-cost-name="'+it.id+'" value="'+it.name+'">'+
     '<input type="number" data-cost-value="'+it.id+'" value="'+it.value+'">'+
+    '<span style="font-size:13px;color:var(--text-muted);">元(台幣)</span>'+
     '<button class="row-del" data-cost-del="'+it.id+'">刪除</button>'+
     '</div>'
   )).join('');
@@ -311,8 +326,7 @@ function renderFeeList(){
   )).join('');
 }
 
-function calcOne(K,rate,Q,R,AA){
-  const L = K*rate;
+function calcOne(L,Q,R,AA){
   const M = L;
   const S = M+R;
   const T = S*Q;
@@ -334,20 +348,30 @@ function calcOne(K,rate,Q,R,AA){
 function fmt(n){ return 'NT$'+Number(n).toLocaleString('zh-TW',{maximumFractionDigits:1}); }
 
 function renderCards(){
-  const K = parseFloat(document.getElementById('rmb').value)||0;
-  const rate = parseFloat(document.getElementById('rate').value)||0;
+  const twdMode = document.getElementById('currencyModeToggle').checked;
+  const twdInput = document.getElementById('twd');
+  let L;
+  if(twdMode){
+    L = parseFloat(twdInput.value)||0;
+    const rate = parseFloat(document.getElementById('rate').value)||0;
+    const rmbInput = document.getElementById('rmb');
+    rmbInput.value = rate ? (L/rate).toFixed(2) : '0.00';
+  } else {
+    const K = parseFloat(document.getElementById('rmb').value)||0;
+    const rate = parseFloat(document.getElementById('rate').value)||0;
+    L = K*rate;
+    twdInput.value = L.toFixed(2);
+  }
   const Q = parseFloat(document.getElementById('q').value)||0;
   const R = parseFloat(document.getElementById('r').value)||0;
   const AA1 = parseFloat(document.getElementById('aa1').value)||0;
   const AA2 = parseFloat(document.getElementById('aa2').value)||0;
   const AA3 = parseFloat(document.getElementById('aa3').value)||0;
 
-  document.getElementById('out-l').textContent = fmt((K*rate).toFixed(2));
-
   const results = [
-    {label:'設計成本 '+AA1, r: calcOne(K,rate,Q,R,AA1)},
-    {label:'設計成本 '+AA2, r: calcOne(K,rate,Q,R,AA2)},
-    {label:'設計成本 '+AA3, r: calcOne(K,rate,Q,R,AA3)},
+    {label:'設計成本 '+AA1, r: calcOne(L,Q,R,AA1)},
+    {label:'設計成本 '+AA2, r: calcOne(L,Q,R,AA2)},
+    {label:'設計成本 '+AA3, r: calcOne(L,Q,R,AA3)},
   ];
 
   document.getElementById('out-u').textContent = (results[0].r.U*100).toFixed(1)+'%';
@@ -418,10 +442,25 @@ document.getElementById('feeList').addEventListener('change', (e)=>{
   }
 });
 
-['rmb','rate','q','r','aa1','aa2','aa3'].forEach(id=>{
+['rmb','rate','q','r','aa1','aa2','aa3','twd'].forEach(id=>{
   document.getElementById(id).addEventListener('input', recalcAll);
 });
 
+function applyCurrencyMode(){
+  const twdMode = document.getElementById('currencyModeToggle').checked;
+  document.getElementById('rmb').disabled = twdMode;
+  document.getElementById('twd').disabled = !twdMode;
+  document.getElementById('currencyModeLabel').textContent = twdMode
+    ? '目前輸入幣別:台幣(直接輸入,人民幣自動換算顯示)'
+    : '目前輸入幣別:人民幣(自動換算台幣)';
+}
+
+document.getElementById('currencyModeToggle').addEventListener('change', ()=>{
+  applyCurrencyMode();
+  recalcAll();
+});
+
+applyCurrencyMode();
 renderCostList();
 renderFeeList();
 recalcAll();
