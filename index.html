@@ -255,14 +255,22 @@
     </div>
   </div>
 
+  <div class="row" style="margin-bottom:14px; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);">
+    <label class="switch">
+      <input type="checkbox" id="marginModeToggle">
+      <span class="track"></span><span class="thumb"></span>
+    </label>
+    <span id="marginModeLabel" style="font-size:13px; color:var(--text-secondary);">目前輸入:倍數(自動換算毛利率)</span>
+  </div>
+
   <div class="grid grid-2">
     <div>
       <label for="r">包裝成本</label>
       <input type="number" id="r" value="10" step="1">
     </div>
     <div>
-      <label>毛利率(自動算出)</label>
-      <div class="readout" id="out-u">-</div>
+      <label id="uLabel">毛利率%(自動算出)</label>
+      <input type="number" id="u" value="80.5" step="0.1" disabled>
     </div>
   </div>
 
@@ -377,7 +385,20 @@ function renderCards(){
     L = K*rate;
     twdInput.value = L.toFixed(2);
   }
-  const Q = parseFloat(document.getElementById('q').value)||0;
+  const marginMode = document.getElementById('marginModeToggle').checked;
+  const qInput = document.getElementById('q');
+  const uInput = document.getElementById('u');
+  let Q;
+  if(marginMode){
+    const Upct = parseFloat(uInput.value)||0;
+    const Uratio = Upct/100;
+    Q = Uratio < 1 ? 1/(1-Uratio) : 0;
+    qInput.value = Q.toFixed(2);
+  } else {
+    Q = parseFloat(qInput.value)||0;
+    const Uratio = Q ? (Q-1)/Q : 0;
+    uInput.value = (Uratio*100).toFixed(1);
+  }
   const R = parseFloat(document.getElementById('r').value)||0;
   const AA1 = parseFloat(document.getElementById('aa1').value)||0;
   const AA2 = parseFloat(document.getElementById('aa2').value)||0;
@@ -388,8 +409,6 @@ function renderCards(){
     {label:'設計成本 '+AA2, r: calcOne(L,Q,R,AA2)},
     {label:'設計成本 '+AA3, r: calcOne(L,Q,R,AA3)},
   ];
-
-  document.getElementById('out-u').textContent = (results[0].r.U*100).toFixed(1)+'%';
 
   document.getElementById('cards').innerHTML = results.map(({label,r})=>{
     let html = '<div class="card">'+
@@ -457,7 +476,7 @@ document.getElementById('feeList').addEventListener('change', (e)=>{
   }
 });
 
-['rmb','rate','q','r','aa1','aa2','aa3','twd'].forEach(id=>{
+['rmb','rate','q','r','aa1','aa2','aa3','twd','u'].forEach(id=>{
   document.getElementById(id).addEventListener('input', recalcAll);
 });
 
@@ -475,7 +494,22 @@ document.getElementById('currencyModeToggle').addEventListener('change', ()=>{
   recalcAll();
 });
 
+function applyMarginMode(){
+  const marginMode = document.getElementById('marginModeToggle').checked;
+  document.getElementById('q').disabled = marginMode;
+  document.getElementById('u').disabled = !marginMode;
+  document.getElementById('marginModeLabel').textContent = marginMode
+    ? '目前輸入:毛利率(自動換算倍數)'
+    : '目前輸入:倍數(自動換算毛利率)';
+}
+
+document.getElementById('marginModeToggle').addEventListener('change', ()=>{
+  applyMarginMode();
+  recalcAll();
+});
+
 applyCurrencyMode();
+applyMarginMode();
 renderCostList();
 renderFeeList();
 recalcAll();
