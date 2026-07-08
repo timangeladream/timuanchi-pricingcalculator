@@ -502,8 +502,8 @@ function applyMarginMode(){
   document.getElementById('q').disabled = marginMode;
   document.getElementById('u').disabled = !marginMode;
   document.getElementById('marginModeLabel').textContent = marginMode
-    ? '目前輸入:毛利率(自動換算成倍數)'
-    : '目前輸入:倍數(自動換算成毛利率)';
+    ? '目前輸入：毛利率(自動換算倍數)'
+    : '目前輸入：倍數(自動換算毛利率)';
 }
 
 document.getElementById('marginModeToggle').addEventListener('change', ()=>{
