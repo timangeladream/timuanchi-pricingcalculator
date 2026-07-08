@@ -225,7 +225,10 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>定價試算器</h1>
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px;">
+    <h1 style="margin:0;">定價試算器</h1>
+    <button id="refreshBtn" type="button">重新整理</button>
+  </div>
   <p class="subtitle">輸入進貨成本與各項雜支,自動算出建議售價與淨利</p>
 
   <div class="row" style="margin-bottom:14px; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);">
@@ -519,6 +522,17 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js');
   });
 }
+
+document.getElementById('refreshBtn').addEventListener('click', ()=>{
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistration().then(reg=>{
+      if(reg) reg.update();
+      location.reload();
+    });
+  } else {
+    location.reload();
+  }
+});
 </script>
 </body>
 </html>
