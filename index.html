@@ -290,6 +290,22 @@
   <p class="hint">勾選「獨立售價」的項目(如寄櫃)不會併入稅後售價的手續費加總,而是另外算出一個獨立售價</p>
   <div id="feeList" style="margin-bottom:1.5rem;"></div>
 
+  <p class="section-title">工時成本</p>
+  <div class="grid grid-3">
+    <div>
+      <label for="wage">時薪</label>
+      <input type="number" id="wage" value="200" step="1">
+    </div>
+    <div>
+      <label for="minutes">製作時間(分鐘)</label>
+      <input type="number" id="minutes" value="20" step="1">
+    </div>
+    <div>
+      <label id="laborCostLabel">工時費用(自動算出)</label>
+      <input type="number" id="laborCost" value="66.67" step="0.01" disabled>
+    </div>
+  </div>
+
   <p class="section-title">設計成本(三種比較情境)</p>
   <div class="grid grid-3">
     <input type="number" id="aa1" value="100" step="1">
@@ -352,18 +368,18 @@ function renderFeeList(){
   )).join('');
 }
 
-function calcOne(L,Q,R,AA){
+function calcOne(L,Q,R,AA,laborCost){
   const M = L;
   const S = M+R;
   const T = S*Q;
   const U = T>0 ? (T-S)/T : 0;
   const costSum = costItems.filter(c=>c.enabled).reduce((s,c)=>s+(parseFloat(c.value)||0),0);
-  const AB = T + costSum + AA;
+  const AB = T + costSum + AA + laborCost;
   const feeRate = feeItems.filter(f=>f.enabled && !f.standalone).reduce((s,f)=>s+(parseFloat(f.percent)||0),0)/100;
   const AI = AB*feeRate;
   const AJ = feeRate < 1 ? AB/(1-feeRate) : AB;
   const AK = Math.ceil(AJ/10)*10;
-  const AP = AJ - AI - AA - costSum - S;
+  const AP = AJ - AI - AA - costSum - S - laborCost;
   const standalones = feeItems.filter(f=>f.enabled && f.standalone).map(f=>{
     const r2 = (parseFloat(f.percent)||0)/100;
     return {name:f.name, price: r2<1 ? AB/(1-r2) : AB};
@@ -407,10 +423,15 @@ function renderCards(){
   const AA2 = parseFloat(document.getElementById('aa2').value)||0;
   const AA3 = parseFloat(document.getElementById('aa3').value)||0;
 
+  const wage = parseFloat(document.getElementById('wage').value)||0;
+  const minutes = parseFloat(document.getElementById('minutes').value)||0;
+  const laborCost = wage/60*minutes;
+  document.getElementById('laborCost').value = laborCost.toFixed(2);
+
   const results = [
-    {label:'設計成本 '+AA1, r: calcOne(L,Q,R,AA1)},
-    {label:'設計成本 '+AA2, r: calcOne(L,Q,R,AA2)},
-    {label:'設計成本 '+AA3, r: calcOne(L,Q,R,AA3)},
+    {label:'設計成本 '+AA1, r: calcOne(L,Q,R,AA1,laborCost)},
+    {label:'設計成本 '+AA2, r: calcOne(L,Q,R,AA2,laborCost)},
+    {label:'設計成本 '+AA3, r: calcOne(L,Q,R,AA3,laborCost)},
   ];
 
   document.getElementById('cards').innerHTML = results.map(({label,r})=>{
@@ -479,7 +500,7 @@ document.getElementById('feeList').addEventListener('change', (e)=>{
   }
 });
 
-['rmb','rate','q','r','aa1','aa2','aa3','twd','u'].forEach(id=>{
+['rmb','rate','q','r','aa1','aa2','aa3','twd','u','wage','minutes'].forEach(id=>{
   document.getElementById(id).addEventListener('input', recalcAll);
 });
 
