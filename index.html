@@ -376,8 +376,8 @@ function calcOne(L,Q,R,AA,laborCost){
   const costSum = costItems.filter(c=>c.enabled).reduce((s,c)=>s+(parseFloat(c.value)||0),0);
   const AB = T + costSum + AA + laborCost;
   const feeRate = feeItems.filter(f=>f.enabled && !f.standalone).reduce((s,f)=>s+(parseFloat(f.percent)||0),0)/100;
-  const AI = AB*feeRate;
   const AJ = feeRate < 1 ? AB/(1-feeRate) : AB;
+  const AI = AJ*feeRate;
   const AK = Math.ceil(AJ/10)*10;
   const AP = AJ - AI - AA - costSum - S - laborCost;
   const standalones = feeItems.filter(f=>f.enabled && f.standalone).map(f=>{
